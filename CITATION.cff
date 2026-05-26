@@ -1,0 +1,32 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "Stop-and-Wait Simulator: An Interactive Educational Tool for ARQ Protocols"
+abstract: >
+  Simulatore didattico interattivo del protocollo Stop-and-Wait per lo studio
+  dei protocolli ARQ, del controllo di flusso, degli ACK, dei timeout e delle
+  ritrasmissioni nelle reti di calcolatori. File HTML5 standalone, funzionante
+  offline, con animazione del diagramma spazio-tempo, scenari di errore
+  configurabili, modalità passo didattico e lavagna teorica integrata.
+authors:
+  - family-names: "Capano"
+    given-names: "Domenico"
+version: "2.1"
+date-released: "2026-05-26"
+license: "LicenseRef-PolyForm-Noncommercial-1.0.0"
+doi: "10.5281/zenodo.20401650"
+repository-code: "https://github.com/domenicocapano/stop-and-wait-simulator"
+url: "https://www.learningobjects.org"
+keywords:
+  - Stop-and-Wait
+  - ARQ
+  - ACK
+  - timeout
+  - retransmission
+  - flow control
+  - Data Link Layer
+  - computer networks
+  - educational software
+  - non-commercial educational resource
+  - HTML5
+  - standalone

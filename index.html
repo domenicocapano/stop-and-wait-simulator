@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<!--
+  ╔═══════════════════════════════════════════════════════════════════╗
+  ║  Stop-and-Wait Simulator — v2.1 Zenodo Edition                    ║
+  ║  Autore:      Domenico Capano                                     ║
+  ║  Sito:        LearningObjects.org                                  ║
+  ║  Anno:        2026                                                ║
+  ║  Licenza:     PolyForm Noncommercial License 1.0.0                ║
+  ║  DOI:         10.5281/zenodo.XXXXXXX                              ║
+  ╚═══════════════════════════════════════════════════════════════════╝
+-->
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="author" content="Domenico Capano">
+<meta name="description" content="Simulatore didattico interattivo del protocollo Stop-and-Wait per lo studio dei protocolli ARQ, del controllo di flusso, degli ACK, dei timeout e delle ritrasmissioni nelle reti di calcolatori.">
+<meta name="keywords" content="Stop-and-Wait, ARQ, ACK, timeout, ritrasmissione, controllo di flusso, Data Link, reti di calcolatori, Sistemi e Reti, simulatore didattico, educational software, risorsa educativa non commerciale">
+<meta name="license" content="PolyForm Noncommercial License 1.0.0">
+<meta name="version" content="2.1">
+<title>Stop-and-Wait Simulator v2.1 | Capano — LearningObjects.org</title>
+<style>
+:root {
+  --bg:     #f0f2f8;
+  --bg2:    #ffffff;
+  --bg3:    #e8ebf5;
+  --border: #c8cde0;
+  --accent: #1a56db;
+  --green:  #15803d;
+  --red:    #b91c1c;
+  --amber:  #b45309;
+  --text:   #111827;
+  --text2:  #6b7280;
+  --sans:   system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  --mono:   Consolas, "Courier New", monospace;
+  --sh:     0 1px 4px rgba(0,0,0,.1);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{background:var(--bg);color:var(--text);font-family:var(--sans);height:100%;overflow:hidden;}
+
+/* ══ HEADER ══ */
+header{
+  padding:9px 18px 8px;background:var(--bg2);
+  border-bottom:2px solid var(--accent);
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:8px;flex-shrink:0;box-shadow:var(--sh);
+}
+header h1{font-size:1rem;font-weight:700;color:var(--text);letter-spacing:-0.01em;}
+header h1 span{color:var(--accent);}
+header .meta{font-size:.61rem;color:var(--text2);font-family:var(--mono);margin-top:1px;}
+.hdr-btns{display:flex;gap:7px;flex-wrap:wrap;}
+.btn-hdr{
+  padding:6px 12px;background:var(--accent);color:#fff;border:none;
+  border-radius:6px;font-family:var(--sans);font-weight:600;font-size:.73rem;
+  cursor:pointer;white-space:nowrap;transition:background .15s;
+}
+.btn-hdr:hover{background:#1344b0;}
+.btn-hdr.ghost{background:var(--bg3);color:var(--text);border:1px solid var(--border);}
+.btn-hdr.ghost:hover{background:var(--border);}
+
+/* ══ LAYOUT ══ */
+.root{display:flex;flex-direction:column;height:calc(100dvh - 47px);}
+.main{display:flex;flex-direction:column;flex:1;min-height:0;}
+.diagram-wrap{flex:1 1 0;min-height:0;position:relative;overflow:hidden;background:var(--bg);}
+canvas{display:block;width:100%;height:100%;}
+
+/* ══ STATS ══ */
+.stats-row{
+  display:grid;grid-template-columns:repeat(5,1fr);
+  gap:5px;padding:7px 12px;
+  background:var(--bg2);border-top:1px solid var(--border);flex-shrink:0;
+}
+.stat{background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:5px 4px;text-align:center;}
+.stat .v{font-family:var(--mono);font-size:1rem;font-weight:700;line-height:1;}
+.stat .v.g{color:var(--green);}.stat .v.r{color:var(--red);}
+.stat .v.a{color:var(--amber);}.stat .v.b{color:var(--accent);}
+.stat .l{font-size:.54rem;font-family:var(--mono);color:var(--text2);margin-top:2px;}
+
+/* ══ BOTTOM MOBILE ══ */
+.bottom{flex-shrink:0;background:var(--bg2);border-top:1px solid var(--border);}
+.tabs{display:flex;border-bottom:1px solid var(--border);}
+.tab{flex:1;padding:8px 2px;font-size:.64rem;font-family:var(--mono);color:var(--text2);
+  background:none;border:none;cursor:pointer;text-align:center;transition:color .15s;letter-spacing:.03em;}
+.tab.active{color:var(--accent);border-bottom:2px solid var(--accent);margin-bottom:-1px;font-weight:700;}
+.panel{display:none;padding:10px 12px;max-height:192px;overflow-y:auto;}
+.panel.active{display:block;}
+
+/* ══ SIDEBAR DESKTOP ══ */
+.sidebar{
+  width:288px;flex-shrink:0;border-left:1px solid var(--border);
+  background:var(--bg2);display:none;flex-direction:column;overflow:hidden;
+}
+.sidebar-scroll{flex:1;overflow-y:auto;padding:11px 12px;}
+
+@media(min-width:768px){
+  .main{flex-direction:row;}
+  .sidebar{display:flex;}
+  .bottom{display:none;}
+  .stats-row{
+    border-top:none;border-bottom:1px solid var(--border);
+    grid-template-columns:repeat(5,1fr);
+  }
+  .sidebar-scroll .panel{display:block;max-height:none;padding:0;margin-bottom:11px;}
+}
+
+/* ══ FORM ══ */
+.sb-h3{font-size:.63rem;font-family:var(--mono);color:var(--text2);letter-spacing:.1em;
+  text-transform:uppercase;border-bottom:1px solid var(--border);
+  padding-bottom:4px;margin-bottom:8px;font-weight:700;}
+.btn-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:9px;}
+.btn{padding:9px 3px;border:none;border-radius:7px;font-family:var(--sans);
+  font-weight:600;font-size:.72rem;cursor:pointer;transition:all .12s;text-align:center;}
+.btn-start{background:var(--accent);color:#fff;}.btn-start:hover{background:#1344b0;}
+.btn-step,.btn-reset{background:var(--bg3);color:var(--text);border:1px solid var(--border);}
+.btn-step:hover,.btn-reset:hover{background:var(--border);}
+.btn:disabled{opacity:.35;cursor:not-allowed;}
+.btn:active:not(:disabled){transform:scale(.95);}
+
+.ctrl-group{margin-bottom:8px;}
+.ctrl-group label{display:flex;justify-content:space-between;align-items:center;
+  font-size:.69rem;color:var(--text2);margin-bottom:3px;}
+.ctrl-group label span{color:var(--accent);font-weight:700;font-family:var(--mono);}
+input[type=range]{width:100%;accent-color:var(--accent);height:18px;}
+
+.toggle-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;}
+.toggle-row .lbl{font-size:.72rem;color:var(--text);}
+.toggle{position:relative;width:40px;height:20px;}
+.toggle input{opacity:0;width:0;height:0;}
+.tslider{position:absolute;inset:0;background:var(--border);border-radius:20px;cursor:pointer;transition:background .2s;}
+.tslider::before{content:'';position:absolute;width:14px;height:14px;left:3px;top:3px;
+  background:#fff;border-radius:50%;transition:transform .2s;box-shadow:0 1px 2px rgba(0,0,0,.2);}
+.toggle input:checked+.tslider{background:var(--accent);}
+.toggle input:checked+.tslider::before{transform:translateX(20px);}
+
+.slbl{font-size:.61rem;color:var(--text2);letter-spacing:.07em;text-transform:uppercase;
+  border-bottom:1px solid var(--border);padding-bottom:3px;margin-bottom:6px;margin-top:7px;}
+.note{font-size:.62rem;color:var(--text2);line-height:1.6;margin-top:3px;font-style:italic;}
+
+/* ══ LOG ══ */
+.log-panel{overflow-y:auto;padding:3px 0 6px;}
+.log-panel.mlg{max-height:148px;}
+.log-entry{display:flex;gap:7px;font-size:.78rem;font-family:var(--mono);line-height:1.9;}
+.log-t{color:#374151;flex-shrink:0;min-width:44px;font-weight:700;}
+.log-m{color:#111827;font-weight:600;}
+.log-entry.ok .log-m{color:var(--green);font-weight:700;}
+.log-entry.err .log-m{color:var(--red);font-weight:700;}
+.log-entry.warn .log-m{color:var(--amber);font-weight:700;}
+.log-entry.info .log-m{color:#374151;}
+
+/* ══ LEGENDA ══ */
+.legend{display:grid;grid-template-columns:1fr 1fr;gap:4px 8px;margin-bottom:5px;}
+.leg{display:flex;align-items:center;gap:5px;font-size:.65rem;color:var(--text2);}
+.ldot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.ldash{width:16px;height:2px;flex-shrink:0;border-top:2px dashed;}
+.lline{width:16px;height:2px;flex-shrink:0;}
+
+/* ══ MODALI ══ */
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.45);
+  display:flex;align-items:center;justify-content:center;
+  z-index:1000;opacity:0;pointer-events:none;transition:opacity .2s;}
+.modal-ov.open{opacity:1;pointer-events:all;}
+.modal{background:var(--bg2);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.2);
+  max-width:560px;width:93%;max-height:86dvh;overflow-y:auto;
+  padding:22px 22px 18px;position:relative;}
+.modal h2{font-size:1.02rem;font-weight:700;color:var(--accent);margin-bottom:13px;}
+.modal-close{position:absolute;top:12px;right:14px;background:var(--bg3);
+  border:1px solid var(--border);border-radius:50%;width:26px;height:26px;
+  font-size:.95rem;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  color:var(--text2);transition:background .15s;}
+.modal-close:hover{background:var(--border);}
+.theory-section{margin-bottom:15px;border-bottom:1px solid var(--border);padding-bottom:11px;}
+.theory-section:last-child{border-bottom:none;padding-bottom:0;margin-bottom:0;}
+.theory-section h3{font-size:.82rem;font-weight:700;color:var(--text);margin-bottom:5px;}
+.theory-section p{font-size:.79rem;color:var(--text);line-height:1.7;}
+.formula-box{background:var(--bg3);border:1px solid var(--border);border-radius:7px;
+  padding:10px 13px;margin:8px 0;font-family:var(--mono);font-size:.79rem;color:var(--text);}
+.formula-box .f{font-size:.93rem;font-weight:700;color:var(--accent);margin-bottom:5px;}
+.warning-box{background:#fffbeb;border:1px solid #fde68a;border-radius:7px;
+  padding:10px 13px;margin:8px 0;font-size:.78rem;color:#78350f;line-height:1.6;}
+
+/* Modale log */
+.log-modal-content{
+  background:var(--bg3);border:1px solid var(--border);border-radius:7px;
+  padding:10px 12px;max-height:420px;overflow-y:auto;
+  font-family:var(--mono);font-size:.84rem;line-height:1.9;
+  white-space:pre-wrap;margin-bottom:12px;color:var(--text);
+}
+.log-modal-btns{display:flex;gap:8px;flex-wrap:wrap;}
+.lm-btn{padding:8px 14px;border:none;border-radius:6px;cursor:pointer;
+  font-family:var(--sans);font-weight:600;font-size:.86rem;transition:all .15s;}
+.lm-btn.primary{background:var(--accent);color:#fff;}
+.lm-btn.primary:hover{background:#1344b0;}
+.lm-btn.secondary{background:var(--bg3);color:var(--text);border:1px solid var(--border);}
+.lm-btn.secondary:hover{background:var(--border);}
+
+/* ══ PASSO DIDATTICO ══ */
+.step-modal{position:fixed;inset:0;background:rgba(0,0,0,.5);
+  display:flex;align-items:flex-end;justify-content:center;
+  z-index:999;opacity:0;pointer-events:none;transition:opacity .2s;}
+.step-modal.open{opacity:1;pointer-events:all;}
+.step-card{background:var(--bg2);border-radius:12px 12px 0 0;padding:18px 18px 22px;
+  width:100%;max-width:540px;box-shadow:0 -4px 20px rgba(0,0,0,.15);}
+@media(min-width:768px){.step-modal{align-items:center;}.step-card{border-radius:12px;max-width:460px;}}
+.step-card h3{font-size:1.05rem;font-weight:700;color:var(--accent);margin-bottom:7px;}
+.step-card p{font-size:.92rem;color:var(--text);line-height:1.7;margin-bottom:11px;}
+.step-options{display:flex;flex-direction:column;gap:6px;}
+.step-opt{padding:11px 13px;background:var(--bg3);border:1px solid var(--border);
+  border-radius:7px;font-size:.92rem;color:var(--text);cursor:pointer;
+  text-align:left;font-family:var(--sans);transition:all .15s;}
+.step-opt:hover:not(:disabled){background:var(--border);}
+.step-opt.correct{background:#dcfce7;border-color:var(--green);color:var(--green);font-weight:700;}
+.step-opt.wrong{background:#fee2e2;border-color:var(--red);color:var(--red);font-weight:700;}
+.step-btn-ok{display:none;margin-top:10px;width:100%;padding:9px;
+  background:var(--accent);color:#fff;border:none;border-radius:7px;
+  font-family:var(--sans);font-weight:600;font-size:.8rem;cursor:pointer;}
+
+/* Stampa log */
+@media print{
+  body > *:not(#printArea){display:none!important;}
+  #printArea{display:block!important;font-family:var(--mono);font-size:11px;padding:20px;}
+}
+#printArea{display:none;}
+
+::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+</style>
+</head>
+<body>
+
+<div id="printArea"></div>
+
+<header>
+  <div>
+    <h1>Stop-<span>&amp;</span>-Wait <span style="color:var(--text2);font-weight:500;font-size:.86rem">Simulator</span>
+      <span style="font-size:.67rem;color:var(--text2);font-weight:400;font-family:var(--mono)">v2.1</span></h1>
+    <div class="meta">Protocollo ARQ &mdash; D. Capano &mdash; LearningObjects.org &mdash; PolyForm NC 1.0</div>
+  </div>
+  <div class="hdr-btns">
+    <button class="btn-hdr" id="btnTheory" aria-label="Apri lavagna teorica">&#128218; Teoria</button>
+    <button class="btn-hdr ghost" id="btnLog" aria-label="Apri log simulazione">&#128196; Log</button>
+  </div>
+</header>
+
+<div class="root">
+<div class="main">
+
+  <div class="diagram-wrap" role="img" aria-label="Diagramma spazio-tempo Stop-and-Wait">
+    <canvas id="cv" aria-hidden="true"></canvas>
+  </div>
+
+  <!-- SIDEBAR DESKTOP -->
+  <aside class="sidebar" aria-label="Pannello controlli">
+    <div class="stats-row">
+      <div class="stat"><div class="v g" id="dOk">0</div><div class="l">OK</div></div>
+      <div class="stat"><div class="v r" id="dErr">0</div><div class="l">Ritrasm.</div></div>
+      <div class="stat"><div class="v a" id="dTO">0</div><div class="l">Timeout</div></div>
+      <div class="stat"><div class="v a" id="dDup">0</div><div class="l">Duplicati</div></div>
+      <div class="stat"><div class="v b" id="dEff">&mdash;</div><div class="l">Consegnati%</div></div>
+    </div>
+    <div class="sidebar-scroll">
+      <div class="sb-h3">Simulazione</div>
+      <div class="panel">
+        <div class="btn-row">
+          <button class="btn btn-start" id="dBS" aria-label="Avvia simulazione">&#9654; Avvia</button>
+          <button class="btn btn-step"  id="dBSt" disabled aria-label="Avanza passo">Passo</button>
+          <button class="btn btn-reset" id="dBR" aria-label="Reset">&#8635; Reset</button>
+        </div>
+        <div class="ctrl-group">
+          <label for="dNF">Frame da inviare <span id="dVF">6</span></label>
+          <input type="range" id="dNF" min="2" max="10" value="6" aria-label="Numero frame">
+        </div>
+        <div class="ctrl-group">
+          <label for="dSP">Velocit&agrave; <span id="dVS">3</span></label>
+          <input type="range" id="dSP" min="1" max="5" value="3" aria-label="Velocità animazione">
+        </div>
+        <div class="toggle-row">
+          <span class="lbl">Modalit&agrave; passo didattico</span>
+          <label class="toggle"><input type="checkbox" id="dCS" aria-label="Attiva passo didattico"><div class="tslider"></div></label>
+        </div>
+      </div>
+      <div class="sb-h3" style="margin-top:10px">Scenari di errore</div>
+      <div class="panel" id="dPanelErr">
+        <div class="slbl" style="margin-top:0">Scenario 1 &mdash; Frame corrotto / perso</div>
+        <div class="toggle-row"><span class="lbl">Attiva</span><label class="toggle"><input type="checkbox" id="dCF"><div class="tslider"></div></label></div>
+        <div class="ctrl-group">
+          <label for="dEF">Frame n&deg; <span id="dVFE">2</span></label>
+          <input type="range" id="dEF" min="1" max="10" value="2">
+        </div>
+        <div class="slbl">Scenario 2 &mdash; ACK perso</div>
+        <div class="toggle-row"><span class="lbl">Attiva</span><label class="toggle"><input type="checkbox" id="dCA"><div class="tslider"></div></label></div>
+        <div class="ctrl-group">
+          <label for="dEA">Frame n&deg; <span id="dVAE">3</span></label>
+          <input type="range" id="dEA" min="1" max="10" value="3">
+        </div>
+        <div class="slbl">Scenario 3 &mdash; Frame in ritardo</div>
+        <div class="toggle-row"><span class="lbl">Attiva</span><label class="toggle"><input type="checkbox" id="dCL"><div class="tslider"></div></label></div>
+        <div class="ctrl-group">
+          <label for="dEL">Frame n&deg; <span id="dVLE">4</span></label>
+          <input type="range" id="dEL" min="1" max="10" value="4">
+        </div>
+        <div class="slbl">Scenario 4 &mdash; Errori casuali</div>
+        <div class="toggle-row"><span class="lbl">Attiva</span><label class="toggle"><input type="checkbox" id="dCR"><div class="tslider"></div></label></div>
+        <div class="ctrl-group">
+          <label for="dER">Probabilit&agrave; errore <span id="dVRE">20%</span></label>
+          <input type="range" id="dER" min="5" max="50" step="5" value="20">
+        </div>
+        <p class="note">Con scenari 4 attivo, gli scenari 1-3 vengono ignorati. Ogni frame ha la probabilit&agrave; indicata di essere corrotto o perso.</p>
+      </div>
+      <div class="sb-h3" style="margin-top:10px">Log</div>
+      <div class="panel">
+        <div class="log-panel" id="dLog" role="log" aria-live="polite" aria-label="Log eventi">
+          <div class="log-entry info"><span class="log-t">&mdash;</span><span class="log-m">Premi Avvia per iniziare.</span></div>
+        </div>
+      </div>
+      <div class="sb-h3" style="margin-top:10px">Legenda</div>
+      <div class="panel">
+        <div class="legend">
+          <div class="leg"><div class="lline" style="background:var(--green);height:3px"></div>Mittente A</div>
+          <div class="leg"><div class="lline" style="background:var(--accent);height:3px"></div>Ricevente B</div>
+          <div class="leg"><div class="ldot" style="background:var(--green)"></div>Frame OK</div>
+          <div class="leg"><div class="ldot" style="background:var(--accent)"></div>ACK</div>
+          <div class="leg"><div class="ldash" style="border-color:var(--green)"></div>Ritrasmissione</div>
+          <div class="leg"><div class="ldash" style="border-color:var(--red)"></div>Frame corrotto</div>
+          <div class="leg"><div class="ldot" style="background:var(--text2);opacity:.5"></div>ACK perso</div>
+          <div class="leg"><div class="ldash" style="border-color:var(--text2);opacity:.5"></div>Frame lento</div>
+          <div class="leg"><div class="lline" style="background:var(--amber);height:3px;opacity:.65"></div>Timer</div>
+          <div class="leg"><div class="lline" style="background:var(--red);height:3px"></div>Timeout</div>
+        </div>
+        <p class="note" style="margin-top:6px">B non invia mai NACK. B tace se il frame &egrave; corrotto o non arriva. A deduce il problema solo dallo scadere del timer.</p>
+      </div>
+    </div>
+  </aside>
+
+</div><!-- /main -->
+
+<!-- STATS MOBILE -->
+<div class="stats-row" id="mStats">
+  <div class="stat"><div class="v g" id="mOk">0</div><div class="l">OK</div></div>
+  <div class="stat"><div class="v r" id="mErr">0</div><div class="l">Ritrasm.</div></div>
+  <div class="stat"><div class="v a" id="mTO">0</div><div class="l">Timeout</div></div>
+  <div class="stat"><div class="v a" id="mDup">0</div><div class="l">Dup.</div></div>
+  <div class="stat"><div class="v b" id="mEff">&mdash;</div><div class="l">Cons.%</div></div>
+</div>
+
+<!-- BOTTOM MOBILE -->
+<div class="bottom" id="mBottom">
+  <div class="tabs" role="tablist">
+    <button class="tab active" data-tab="ctrl" role="tab" aria-selected="true">Controlli</button>
+    <button class="tab" data-tab="err" role="tab">Scenari</button>
+    <button class="tab" data-tab="log" role="tab">Log</button>
+    <button class="tab" data-tab="leg" role="tab">Legenda</button>
+  </div>
+  <div class="panel active" id="tab-ctrl" role="tabpanel">
+    <div class="btn-row">
+      <button class="btn btn-start" id="mBS">&#9654; Avvia</button>
+      <button class="btn btn-step"  id="mBSt" disabled>Passo</button>
+      <button class="btn btn-reset" id="mBR">&#8635; Reset</button>
+    </div>
+    <div class="ctrl-group"><label for="mNF">Frame <span id="mVF">6</span></label><input type="range" id="mNF" min="2" max="10" value="6"></div>
+    <div class="ctrl-group"><label for="mSP">Velocit&agrave; <span id="mVS">3</span></label><input type="range" id="mSP" min="1" max="5" value="3"></div>
+    <div class="toggle-row"><span class="lbl">Passo didattico</span><label class="toggle"><input type="checkbox" id="mCS"><div class="tslider"></div></label></div>
+  </div>
+  <div class="panel" id="tab-err" role="tabpanel">
+    <div class="slbl" style="margin-top:0">Sc.1 &mdash; Frame corrotto/perso</div>
+    <div class="toggle-row"><span class="lbl">Attiva</span><label class="toggle"><input type="checkbox" id="mCF"><div class="tslider"></div></label></div>
+    <div class="ctrl-group"><label for="mEF">Frame n&deg; <span id="mVFE">2</span></label><input type="range" id="mEF" min="1" max="10" value="2"></div>
+    <div class="slbl">Sc.2 &mdash; ACK perso</div>
+    <div class="toggle-row"><span class="lbl">Attiva</span><label class="toggle"><input type="checkbox" id="mCA"><div class="tslider"></div></label></div>
+    <div class="ctrl-group"><label for="mEA">Frame n&deg; <span id="mVAE">3</span></label><input type="range" id="mEA" min="1" max="10" value="3"></div>
+    <div class="slbl">Sc.3 &mdash; Frame in ritardo</div>
+    <div class="toggle-row"><span class="lbl">Attiva</span><label class="toggle"><input type="checkbox" id="mCL"><div class="tslider"></div></label></div>
+    <div class="ctrl-group"><label for="mEL">Frame n&deg; <span id="mVLE">4</span></label><input type="range" id="mEL" min="1" max="10" value="4"></div>
+    <div class="slbl">Sc.4 &mdash; Errori casuali</div>
+    <div class="toggle-row"><span class="lbl">Attiva</span><label class="toggle"><input type="checkbox" id="mCR"><div class="tslider"></div></label></div>
+    <div class="ctrl-group"><label for="mER">Prob. errore <span id="mVRE">20%</span></label><input type="range" id="mER" min="5" max="50" step="5" value="20"></div>
+  </div>
+  <div class="panel" id="tab-log" role="tabpanel">
+    <div class="log-panel mlg" id="mLog" role="log" aria-live="polite">
+      <div class="log-entry info"><span class="log-t">&mdash;</span><span class="log-m">Premi Avvia per iniziare.</span></div>
+    </div>
+  </div>
+  <div class="panel" id="tab-leg" role="tabpanel">
+    <div class="legend">
+      <div class="leg"><div class="ldot" style="background:var(--green)"></div>Frame OK</div>
+      <div class="leg"><div class="ldot" style="background:var(--accent)"></div>ACK</div>
+      <div class="leg"><div class="ldash" style="border-color:var(--green)"></div>Ritrasm.</div>
+      <div class="leg"><div class="ldash" style="border-color:var(--red)"></div>Corrotto</div>
+      <div class="leg"><div class="ldot" style="background:var(--text2);opacity:.5"></div>ACK perso</div>
+      <div class="leg"><div class="ldash" style="border-color:var(--text2);opacity:.4"></div>Lento</div>
+      <div class="leg"><div class="lline" style="background:var(--amber);height:2px;opacity:.65"></div>Timer</div>
+      <div class="leg"><div class="lline" style="background:var(--red);height:2px"></div>Timeout</div>
+    </div>
+    <p class="note">B non invia NACK. A deduce dal timeout.</p>
+  </div>
+</div>
+</div><!-- /root -->
+
+<!-- ══ MODALE LAVAGNA TEORICA ══ -->
+<div class="modal-ov" id="theoryModal" role="dialog" aria-modal="true" aria-labelledby="theoryTitle">
+  <div class="modal">
+    <button class="modal-close" id="closeTheory" aria-label="Chiudi">&times;</button>
+    <h2 id="theoryTitle">&#128218; Lavagna teorica &mdash; Stop-and-Wait</h2>
+
+    <div class="theory-section">
+      <h3>Cos'&egrave; il protocollo Stop-and-Wait</h3>
+      <p>Stop-and-Wait &egrave; il pi&ugrave; semplice protocollo <strong>ARQ</strong> (Automatic Repeat reQuest). Il mittente A trasmette <em>un solo frame alla volta</em> e aspetta la conferma (ACK) prima di inviarne un altro. Risolve contemporaneamente il <strong>controllo degli errori</strong> e il <strong>controllo del flusso</strong>.</p>
+    </div>
+
+    <div class="theory-section">
+      <h3>Cos'&egrave; l'ACK</h3>
+      <p><strong>ACK</strong> (Acknowledgement) &egrave; un frame di controllo inviato da B ad A per confermare la corretta ricezione di un frame. Contiene solo il <strong>numero di sequenza</strong> del frame confermato (0 oppure 1). <strong>Non segnala errori:</strong> se qualcosa va storto, B tace silenziosamente.</p>
+      <p style="margin-top:6px;font-style:italic;font-size:.76rem;color:var(--text2)">Nota: per semplicità grafica, il simulatore rappresenta frame e ACK con tempi convenzionali proporzionali; nella realtà un ACK è generalmente molto più piccolo di un frame dati e impiega meno tempo a essere trasmesso.</p>
+    </div>
+
+    <div class="theory-section">
+      <h3>Il timeout</h3>
+      <p>Quando A trasmette un frame, avvia un <strong>timer</strong>. Se l'ACK non arriva entro il tempo stabilito (timeout), A ritrasmette lo stesso frame. A non sa se il frame era corrotto, perso, o se era l'ACK a perdersi: in tutti i casi la risposta &egrave; <strong>ritrasmettere</strong>.</p>
+    </div>
+
+    <div class="theory-section">
+      <h3>Frame perso vs ACK perso: la differenza</h3>
+      <p><strong>Frame perso o corrotto:</strong> B non riceve nulla di valido, tace. A aspetta il timeout e ritrasmette.<br><br>
+      <strong>ACK perso:</strong> B ha ricevuto correttamente e ha risposto, ma l'ACK si &egrave; perso. A aspetta il timeout e ritrasmette — ma stavolta B riceve un <em>duplicato</em>.<br><br>
+      <em>Dal punto di vista di A i due casi sono identici: A vede solo che il timer &egrave; scaduto.</em></p>
+    </div>
+
+    <div class="theory-section">
+      <h3>Numeri di sequenza 0 / 1</h3>
+      <p>Ogni frame porta un numero di sequenza: <strong>0</strong> oppure <strong>1</strong>, alternati. Servono a B per riconoscere i duplicati, in particolare quando un ACK viene perso e il mittente ritrasmette un frame già ricevuto correttamente:<br><br>
+      &bull; B si aspetta seq=0 &rarr; arriva seq=0 &rarr; <strong>accetta</strong>, ora si aspetta seq=1.<br>
+      &bull; Arriva ancora seq=0 (duplicato) &rarr; B si aspettava seq=1 &rarr; <strong>scarta</strong> il duplicato ma rimanda ACK 0.<br><br>
+      <em>Un solo bit basta perché c'è sempre al massimo un frame in transito alla volta.</em></p>
+    </div>
+
+    <div class="theory-section">
+      <h3>Formula dell'efficienza teorica</h3>
+      <div class="formula-box">
+        <div class="f">&eta; = T<sub>TX</sub> / ( T<sub>TX</sub> + 2 &times; T<sub>PROP</sub> ) = 1 / (1 + 2a)</div>
+        <div style="font-size:.75rem;color:var(--text2);line-height:1.9;margin-top:4px">
+          T<sub>TX</sub> = tempo di trasmissione = dimensione frame &divide; velocit&agrave; canale<br>
+          T<sub>PROP</sub> = tempo di propagazione = distanza &divide; velocit&agrave; del segnale nel mezzo<br>
+          a = T<sub>PROP</sub> / T<sub>TX</sub> &nbsp; (parametro di efficienza)<br>
+          2 &times; T<sub>PROP</sub> = RTT (Round Trip Time) del segnale andata e ritorno
+        </div>
+      </div>
+      <p><strong>Esempio:</strong> canale 1 Mbps, frame 1000 bit, distanza 500 km &rarr; T<sub>TX</sub>=1 ms, T<sub>PROP</sub>=2,5 ms &rarr; a=2,5 &rarr; <strong>&eta; &asymp; 16,7%</strong>.</p>
+      <p style="margin-top:5px;font-size:.77rem;color:var(--text2)"><em>Nota: le statistiche della simulazione (frame consegnati, ritrasmissioni ecc.) descrivono il comportamento della sessione corrente e non devono essere confuse con questa formula teorica, che dipende dai parametri fisici del canale.</em></p>
+    </div>
+
+    <div class="theory-section">
+      <h3>Tutti i casi possibili</h3>
+      <p>
+      <strong>1. Trasmissione corretta:</strong> frame arriva integro &rarr; B manda ACK &rarr; A procede.<br>
+      <strong>2. Frame corrotto (CRC fallito):</strong> B scarta silenziosamente &rarr; A fa timeout e ritrasmette.<br>
+      <strong>3. Frame perso:</strong> non arriva a B &rarr; A fa timeout e ritrasmette.<br>
+      <strong>4. ACK perso:</strong> B ha ricevuto ma ACK si perde &rarr; A fa timeout e ritrasmette &rarr; B scarta il duplicato.<br>
+      <strong>5. Frame in ritardo:</strong> arriva dopo il timeout &rarr; A ha gi&agrave; ritrasmesso &rarr; B scarta l'originale come duplicato.<br>
+      <strong>6. Errori casuali:</strong> combinazione casuale dei casi 2 e 3 su ogni frame con probabilit&agrave; configurabile.
+      </p>
+    </div>
+
+    <div class="theory-section">
+  <h3>&#9888; Nota su FCS/CRC, Ethernet e protocolli ARQ</h3>
+  <div class="warning-box">
+    <strong>FCS/CRC</strong> serve a rilevare se un frame &egrave; arrivato corrotto. 
+    Dopo la rilevazione dell&rsquo;errore, il comportamento dipende dal protocollo usato.<br><br>
+
+    <strong>Ethernet cablata classica</strong> usa FCS/CRC per rilevare gli errori e 
+    <em>scarta</em> i frame corrotti, senza effettuare automaticamente ritrasmissioni 
+    a livello Data Link.<br><br>
+
+    <strong>Altri protocolli o tecnologie di collegamento</strong>, invece, possono usare 
+    meccanismi ARQ con ACK, timeout e ritrasmissioni. 
+    <strong>Stop-and-Wait</strong> &egrave; il modello ARQ pi&ugrave; semplice: consente di comprendere 
+    il principio generale, poi esteso da protocolli pi&ugrave; efficienti come 
+    <strong>Sliding Window</strong>, <strong>Go-Back-N</strong> e 
+    <strong>Selective Repeat</strong>.<br><br>
+
+    Il simulatore presenta Stop-and-Wait come modello didattico fondamentale per 
+    comprendere conferme, timeout, ritrasmissioni e numeri di sequenza.
+   </div>
+   </div>
+
+
+<!-- ══ MODALE LOG ══ -->
+<div class="modal-ov" id="logModal" role="dialog" aria-modal="true" aria-labelledby="logModalTitle">
+  <div class="modal">
+    <button class="modal-close" id="closeLogModal" aria-label="Chiudi">&times;</button>
+    <h2 id="logModalTitle">&#128196; Log della simulazione Stop-and-Wait</h2>
+    <div class="log-modal-content" id="logModalContent">Nessun log disponibile. Avvia una simulazione.</div>
+    <div class="log-modal-btns">
+      <button class="lm-btn primary" id="btnCopyLog">&#128203; Copia log</button>
+      <button class="lm-btn secondary" id="btnDownloadLog">&#8595; Scarica TXT</button>
+      <button class="lm-btn secondary" id="btnPrintLog">&#128438; Stampa / PDF</button>
+      <button class="lm-btn secondary" id="btnCloseLog2">Chiudi</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODALE PASSO DIDATTICO ══ -->
+<div class="step-modal" id="stepModal" role="dialog" aria-modal="true" aria-labelledby="stepTitle">
+  <div class="step-card">
+    <h3 id="stepTitle"></h3>
+    <p id="stepText"></p>
+    <div class="step-options" id="stepOpts" role="group" aria-label="Opzioni risposta"></div>
+    <button class="step-btn-ok" id="stepOK" aria-label="Continua simulazione">Continua &rarr;</button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════
+// Stop-and-Wait Simulator v2.1 — Zenodo Edition
+// Autore: Domenico Capano - LearningObjects.org
+// Licenza: PolyForm Noncommercial License 1.0.0
+// ════════════════════════════════════════════════════════════════
+
+const cv  = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+const wrap = cv.parentElement;
+
+const C = {
+  bg:'#f0f2f8', border:'#c8cde0',
+  nodeA:'#0f7a2a', nodeB:'#0047ab',
+  frameOK:'#0f7a2a', ack:'#0047ab',
+  dropped:'#b00020', late:'#6b7280', ackLost:'#6b7280',
+  timer:'#a34700', timeout:'#b00020',
+  text:'#111827', text2:'#6b7280', amber:'#b45309',
+};
+
+const T_TX=4, T_PROP=5, T_PROC=1;
+const T_TOUT = T_TX + 2*T_PROP + T_PROC + 3;
+const WIN = 28;
+
+let sim = null, animId = null, lastTs = null;
+let isDesktop = window.innerWidth >= 768;
+
+// ── Resize ────────────────────────────────────────────────────
+function resize() {
+  cv.width  = wrap.clientWidth;
+  cv.height = wrap.clientHeight;
+  if (sim) drawFrame(); else drawStatic();
+}
+window.addEventListener('resize', () => { applyLayout(); resize(); });
+new ResizeObserver(resize).observe(wrap);
+
+function applyLayout() {
+  isDesktop = window.innerWidth >= 768;
+  document.querySelector('.sidebar').style.display = isDesktop ? 'flex' : 'none';
+  document.getElementById('mStats').style.display  = isDesktop ? 'none' : 'grid';
+  document.getElementById('mBottom').style.display = isDesktop ? 'none' : 'block';
+}
+
+// ── Tabs mobile ───────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected','false'); });
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    btn.setAttribute('aria-selected','true');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ── Slider bindings con sincronizzazione max ──────────────────
+// Gli slider di errore (EF, EA, EL) devono avere max = valore di NF
+function syncErrMax(nfId) {
+  const n = +document.getElementById(nfId).value;
+  const p = nfId[0];
+  ['EF','EA','EL'].forEach(suffix => {
+    const el = document.getElementById(p + suffix);
+    if (!el) return;
+    const old = +el.value;
+    el.max = n;
+    if (old > n) { el.value = n; el.dispatchEvent(new Event('input')); }
+  });
+}
+
+function bind(id, vid, fmt) {
+  const el = document.getElementById(id);
+  const vl = document.getElementById(vid);
+  if (!el || !vl) return;
+  const update = () => {
+    vl.textContent = fmt ? fmt(el.value) : el.value;
+    if (id.endsWith('NF')) syncErrMax(id);
+  };
+  el.addEventListener('input', update);
+  update();
+}
+
+['d','m'].forEach(p => {
+  bind(p+'NF', p+'VF');
+  bind(p+'SP', p+'VS');
+  bind(p+'EF', p+'VFE');
+  bind(p+'EA', p+'VAE');
+  bind(p+'EL', p+'VLE');
+  bind(p+'ER', p+'VRE', v => v + '%');
+});
+
+// ── Leggi parametri ───────────────────────────────────────────
+function gp() {
+  const s = isDesktop ? 'd' : 'm';
+  return {
+    nFrames:   +document.getElementById(s+'NF').value,
+    speed:     +document.getElementById(s+'SP').value,
+    frameErr:  document.getElementById(s+'CF').checked,
+    errFrame:  +document.getElementById(s+'EF').value,
+    ackLost:   document.getElementById(s+'CA').checked,
+    errAck:    +document.getElementById(s+'EA').value,
+    frameLate: document.getElementById(s+'CL').checked,
+    errLate:   +document.getElementById(s+'EL').value,
+    randErr:   document.getElementById(s+'CR').checked,
+    errProb:   +document.getElementById(s+'ER').value / 100,
+    stepMode:  document.getElementById(s+'CS').checked,
+  };
+}
+
+// ── Bottoni simulazione ───────────────────────────────────────
+['d','m'].forEach(p => {
+  document.getElementById(p+'BS').addEventListener('click', startSim);
+  document.getElementById(p+'BR').addEventListener('click', resetSim);
+  document.getElementById(p+'BSt').addEventListener('click', () => { if (sim) sim.stepPending = true; });
+});
+
+function setUI(running) {
+  ['d','m'].forEach(p => {
+    document.getElementById(p+'BS').disabled  = running;
+    document.getElementById(p+'BSt').disabled = !running;
+  });
+}
+
+function setStats(ok, err, to, dup, effStr) {
+  ['d','m'].forEach(p => {
+    document.getElementById(p==='d'?'dOk':'mOk').textContent   = ok;
+    document.getElementById(p==='d'?'dErr':'mErr').textContent  = err;
+    document.getElementById(p==='d'?'dTO':'mTO').textContent    = to;
+    document.getElementById(p==='d'?'dDup':'mDup').textContent  = dup;
+    document.getElementById(p==='d'?'dEff':'mEff').textContent  = effStr;
+  });
+}
+
+// ── Modale teoria ─────────────────────────────────────────────
+document.getElementById('btnTheory').addEventListener('click',
+  () => document.getElementById('theoryModal').classList.add('open'));
+document.getElementById('closeTheory').addEventListener('click',
+  () => document.getElementById('theoryModal').classList.remove('open'));
+document.getElementById('theoryModal').addEventListener('click',
+  e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('open'); });
+
+// ── Modale log ────────────────────────────────────────────────
+function buildLogText() {
+  const entries = document.getElementById('dLog').querySelectorAll('.log-entry');
+  const header  = 'Stop-and-Wait Simulator v2.1 — Log simulazione\nAutore: Domenico Capano — LearningObjects.org\n' +
+                  new Date().toLocaleString('it-IT') + '\n' + '─'.repeat(60) + '\n\n';
+  const lines   = Array.from(entries).map(e => {
+    const t = e.querySelector('.log-t')?.textContent || '';
+    const m = e.querySelector('.log-m')?.textContent || '';
+    return t.padEnd(8) + m;
+  });
+  return header + lines.join('\n');
+}
+
+document.getElementById('btnLog').addEventListener('click', () => {
+  document.getElementById('logModalContent').textContent = buildLogText();
+  document.getElementById('logModal').classList.add('open');
+});
+document.getElementById('closeLogModal').addEventListener('click',
+  () => document.getElementById('logModal').classList.remove('open'));
+document.getElementById('logModal').addEventListener('click',
+  e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('open'); });
+document.getElementById('btnCloseLog2').addEventListener('click',
+  () => document.getElementById('logModal').classList.remove('open'));
+
+document.getElementById('btnCopyLog').addEventListener('click', () => {
+  const txt = buildLogText();
+  navigator.clipboard.writeText(txt).then(() => {
+    const btn = document.getElementById('btnCopyLog');
+    const orig = btn.textContent; btn.textContent = '✓ Copiato!';
+    setTimeout(() => btn.textContent = orig, 1800);
+  }).catch(() => alert('Copia non supportata: seleziona il testo manualmente.'));
+});
+
+document.getElementById('btnDownloadLog').addEventListener('click', () => {
+  const txt  = buildLogText();
+  const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+  const a    = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
+  a.download = 'saw_log_' + Date.now() + '.txt';
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+document.getElementById('btnPrintLog').addEventListener('click', () => {
+  const txt = buildLogText();
+  const pa  = document.getElementById('printArea');
+  pa.textContent = txt;
+  window.print();
+  setTimeout(() => { pa.textContent = ''; }, 500);
+});
+
+// ════════════════════════════════════════════════════════════════
+// PASSO DIDATTICO
+// Usa addEventListener una sola volta; la logica di proseguimento
+// è gestita interamente da stepContinue() chiamata dall'handler.
+// ════════════════════════════════════════════════════════════════
+const STEP_Q = [
+  { trigger: 'timeout',
+    title: 'Perché A ritrasmette?',
+    text:  'Il timer di A è appena scaduto senza che A abbia ricevuto l\'ACK. Perché A ritrasmette il frame?',
+    opts:  ['Perché B ha inviato un NACK (messaggio di errore)',
+            'Perché il timer è scaduto: A non sa cosa è successo',
+            'Perché A ha ricevuto un ACK con numero sbagliato'],
+    correct: 1,
+    feedback: 'Esatto! A non riceve nessun messaggio di errore da B. B tace sempre. A deduce il problema unicamente dallo scadere del timer, senza sapere se il frame era corrotto, perso, o se era l\'ACK a perdersi.' },
+
+  { trigger: 'dup-discard',
+    title: 'Perché B scarta il frame?',
+    text:  'B ha appena ricevuto un frame e lo ha scartato come duplicato. Come ha fatto a riconoscerlo?',
+    opts:  ['Il CRC del frame era sbagliato',
+            'Il numero di sequenza coincide con quello di un frame già confermato',
+            'Il frame era arrivato con troppo ritardo'],
+    correct: 1,
+    feedback: 'Esatto! B confronta il numero di sequenza ricevuto con quello atteso. Se i numeri non corrispondono con il prossimo atteso, B sa che è un duplicato: lo scarta ma rimanda l\'ACK per evitare un nuovo timeout del mittente.' },
+
+  { trigger: 'dup-late',
+    title: 'Perché questo frame è arrivato due volte?',
+    text:  'Il frame originale è appena arrivato in ritardo ed è stato scartato. Spiega la sequenza.',
+    opts:  ['A ha inviato il frame due volte per errore di programmazione',
+            'Il canale era così lento che il timeout di A è scaduto prima che il frame arrivasse: A ha ritrasmesso, B ha già confermato la ritrasmissione',
+            'B aveva ignorato il primo frame perché troppo occupato'],
+    correct: 1,
+    feedback: 'Esatto! Il canale era talmente lento che il timeout di A è scaduto prima che l\'originale arrivasse. A ha ritrasmesso, B ha accettato la ritrasmissione e inviato l\'ACK. Poi è arrivato anche l\'originale con lo stesso numero di sequenza: duplicato, scartato.' },
+
+  { trigger: 'ack-lost-timeout',
+    title: 'Perché A non sa che B ha già ricevuto il frame?',
+    text:  'L\'ACK di B si è perso. A fa timeout e ritrasmette. Perché A non può sapere che B ha già confermato?',
+    opts:  ['Perché A non legge i log del simulatore',
+            'Perché l\'unico canale di comunicazione da B ad A è l\'ACK stesso, che si è perso',
+            'Perché A ha un bug nel codice'],
+    correct: 1,
+    feedback: 'Esatto! A può sapere che B ha ricevuto il frame solo attraverso l\'ACK. Se l\'ACK si perde, A perde l\'unica fonte di informazione e deve comportarsi come se il frame non fosse mai arrivato: ritrasmette.' },
+];
+
+let stepQueue  = [];
+let stepActive = false; // flag: modale passo aperta
+
+function queueStep(trigger) {
+  const q = STEP_Q.find(q => q.trigger === trigger);
+  if (q) stepQueue.push(q);
+}
+
+function showNextStep() {
+  if (!stepQueue.length) {
+    stepActive = false;
+    // Riprendi la simulazione
+    if (sim && !sim.running) {
+      sim.running = true;
+      lastTs = null;
+      animId = requestAnimationFrame(loop);
+    }
+    return;
+  }
+  showStepModal(stepQueue.shift());
+}
+
+function showStepModal(q) {
+  stepActive = true;
+  const modal = document.getElementById('stepModal');
+  document.getElementById('stepTitle').textContent = q.title;
+  document.getElementById('stepText').textContent  = q.text;
+  const od  = document.getElementById('stepOpts');
+  const ok  = document.getElementById('stepOK');
+  od.innerHTML = '';
+  ok.style.display = 'none';
+
+  q.opts.forEach((opt, i) => {
+    const b = document.createElement('button');
+    b.className = 'step-opt';
+    b.textContent = opt;
+    b.setAttribute('role', 'radio');
+    b.addEventListener('click', () => {
+      od.querySelectorAll('.step-opt').forEach(x => x.disabled = true);
+      if (i === q.correct) {
+        b.classList.add('correct');
+        b.textContent = '✓ ' + opt;
+      } else {
+        b.classList.add('wrong');
+        b.textContent = '✗ ' + opt;
+        od.querySelectorAll('.step-opt')[q.correct].classList.add('correct');
+      }
+      document.getElementById('stepText').textContent = q.feedback;
+      ok.style.display = 'block';
+    });
+    od.appendChild(b);
+  });
+
+  modal.classList.add('open');
+}
+
+// Handler unico per il pulsante Continua — registrato UNA sola volta
+document.getElementById('stepOK').addEventListener('click', () => {
+  document.getElementById('stepModal').classList.remove('open');
+  showNextStep();
+});
+
+// ════════════════════════════════════════════════════════════════
+// COSTRUZIONE EVENTI
+// ════════════════════════════════════════════════════════════════
+function decideFate(i, p, rng) {
+  if (p.randErr) {
+    const r = rng();
+    if (r < p.errProb * 0.55) return 'dropped';
+    if (r < p.errProb)        return 'ack-lost';
+    return 'ok';
+  }
+  if (p.frameErr  && i === p.errFrame) return 'dropped';
+  if (p.ackLost   && i === p.errAck)   return 'ack-lost';
+  if (p.frameLate && i === p.errLate)  return 'late';
+  return 'ok';
+}
+
+function buildEvents(p) {
+  const evs = [], log = [];
+  let t = 0, seq = 0, okCnt = 0, retxCnt = 0, toCnt = 0, dupCnt = 0;
+  let seed = 42;
+  const rng = () => { seed = (seed * 1664525 + 1013904223) & 0xffffffff; return Math.abs(seed) / 0x80000000; };
+
+  for (let i = 1; i <= p.nFrames; i++) {
+    const fate = decideFate(i, p, rng);
+
+    if (fate === 'late') {
+      // Scenario 3 — Frame in ritardo
+      const LATE = T_TOUT + 4;
+      const tOA  = t + T_TX + T_PROP + LATE;
+      evs.push({ type:'frame-late', id:i, seq, tStart:t, tEnd:t+T_TX, tArrive:tOA, label:'F'+i+'['+seq+']' });
+      log.push({ t, cls:'ok', msg:'A → F'+i+' [seq='+seq+'] trasmesso (canale lento)' });
+      evs.push({ type:'timer', id:i, tStart:t+T_TX, tEnd:t+T_TX+T_TOUT });
+      const tTO = t + T_TX + T_TOUT;
+      evs.push({ type:'timeout', id:i, t:tTO, stepTrig:'timeout' });
+      log.push({ t:tTO, cls:'warn', msg:'A → TIMEOUT: originale ancora in transito → ritrasmette F'+i });
+      toCnt++;
+      const tR = tTO + T_PROC, tRA = tR + T_TX + T_PROP;
+      evs.push({ type:'frame', id:i, seq, tStart:tR, tEnd:tR+T_TX, tArrive:tRA, retx:true, label:'F'+i+'['+seq+']↩' });
+      log.push({ t:tR, cls:'warn', msg:'A → ritrasmette F'+i+' [seq='+seq+']' });
+      evs.push({ type:'timer', id:i, tStart:tR+T_TX, tEnd:tR+T_TX+T_TOUT, retx:true });
+      const tA = tRA + T_PROC;
+      evs.push({ type:'ack', id:i, seq, tStart:tA, tEnd:tA+T_PROP+T_TX, tArrive:tA+T_PROP+T_TX });
+      log.push({ t:tRA, cls:'ok', msg:'B → ritrasmissione F'+i+' OK → ACK '+seq+' inviato' });
+      const tACKrcv = tA + T_PROP + T_TX + T_PROC;
+      log.push({ t:tACKrcv, cls:'ok', msg:'A → ACK '+seq+' ricevuto → F'+i+' consegnato ✓' });
+      evs.push({ type:'dup-late', id:i, seq, t:tOA, stepTrig:'dup-late' });
+      log.push({ t:tOA, cls:'info', msg:'B → F'+i+' originale arrivato in ritardo [seq='+seq+'] → DUPLICATO scartato' });
+      t = tACKrcv; retxCnt++; dupCnt++;
+
+    } else if (fate === 'dropped') {
+      // Scenario 1 — Frame corrotto o perso
+      evs.push({ type:'frame-dropped', id:i, seq, tStart:t, tEnd:t+T_TX, tArrive:t+T_TX+T_PROP, label:'F'+i+'['+seq+']' });
+      log.push({ t, cls:'err', msg:'A → F'+i+' [seq='+seq+'] — frame corrotto o perso sul canale' });
+      log.push({ t:t+T_TX+T_PROP, cls:'info', msg:'B → F'+i+' scartato silenziosamente (CRC fallito o frame non pervenuto)' });
+      evs.push({ type:'timer', id:i, tStart:t+T_TX, tEnd:t+T_TX+T_TOUT });
+      const tTO = t + T_TX + T_TOUT;
+      evs.push({ type:'timeout', id:i, t:tTO, stepTrig:'timeout' });
+      log.push({ t:tTO, cls:'warn', msg:'A → TIMEOUT: nessun ACK ricevuto → ritrasmette F'+i });
+      toCnt++;
+      const tR = tTO + T_PROC, tRA = tR + T_TX + T_PROP;
+      evs.push({ type:'frame', id:i, seq, tStart:tR, tEnd:tR+T_TX, tArrive:tRA, retx:true, label:'F'+i+'['+seq+']↩' });
+      log.push({ t:tR, cls:'warn', msg:'A → ritrasmette F'+i+' [seq='+seq+']' });
+      evs.push({ type:'timer', id:i, tStart:tR+T_TX, tEnd:tR+T_TX+T_TOUT, retx:true });
+      const tA = tRA + T_PROC;
+      evs.push({ type:'ack', id:i, seq, tStart:tA, tEnd:tA+T_PROP+T_TX, tArrive:tA+T_PROP+T_TX });
+      log.push({ t:tRA, cls:'ok', msg:'B → F'+i+' ricevuto OK → ACK '+seq+' inviato' });
+      t = tA + T_PROP + T_TX + T_PROC;
+      log.push({ t, cls:'ok', msg:'A → ACK '+seq+' ricevuto → F'+i+' consegnato ✓' }); retxCnt++;
+
+    } else if (fate === 'ack-lost') {
+      // Scenario 2 — ACK perso
+      evs.push({ type:'frame', id:i, seq, tStart:t, tEnd:t+T_TX, tArrive:t+T_TX+T_PROP, label:'F'+i+'['+seq+']' });
+      log.push({ t, cls:'ok', msg:'A → F'+i+' [seq='+seq+'] in transito' });
+      evs.push({ type:'timer', id:i, tStart:t+T_TX, tEnd:t+T_TX+T_TOUT });
+      const tAS = t + T_TX + T_PROP + T_PROC;
+      const tDie = tAS + T_PROP * 0.5;
+      evs.push({ type:'ack-lost', id:i, seq, tStart:tAS, tEnd:tAS+T_PROP+T_TX, tDie });
+      log.push({ t:t+T_TX+T_PROP, cls:'ok', msg:'B → F'+i+' ricevuto OK → ACK '+seq+' inviato' });
+      log.push({ t:tDie, cls:'err', msg:'✗ ACK '+seq+' perso nel canale' });
+      const tTO = t + T_TX + T_TOUT;
+      evs.push({ type:'timeout', id:i, t:tTO, stepTrig:'ack-lost-timeout' });
+      log.push({ t:tTO, cls:'warn', msg:'A → TIMEOUT: ACK non ricevuto → ritrasmette F'+i });
+      toCnt++;
+      const tR = tTO + T_PROC, tRA = tR + T_TX + T_PROP;
+      evs.push({ type:'frame', id:i, seq, tStart:tR, tEnd:tR+T_TX, tArrive:tRA, retx:true, duplicate:true, label:'F'+i+'['+seq+']DUP' });
+      log.push({ t:tR, cls:'warn', msg:'A → ritrasmette F'+i+' (B lo riceverà come duplicato)' });
+      evs.push({ type:'timer', id:i, tStart:tR+T_TX, tEnd:tR+T_TX+T_TOUT, retx:true });
+      evs.push({ type:'dup-discard', id:i, seq, t:tRA, stepTrig:'dup-discard' });
+      log.push({ t:tRA, cls:'info', msg:'B → F'+i+' seq='+seq+' già ricevuto → DUPLICATO scartato, rinvia ACK '+seq });
+      const tA2 = tRA + T_PROC;
+      evs.push({ type:'ack', id:i, seq, tStart:tA2, tEnd:tA2+T_PROP+T_TX, tArrive:tA2+T_PROP+T_TX });
+      t = tA2 + T_PROP + T_TX + T_PROC;
+      log.push({ t, cls:'ok', msg:'A → ACK '+seq+' ricevuto → F'+i+' consegnato ✓' }); retxCnt++; dupCnt++;
+
+    } else {
+      // Trasmissione corretta
+      evs.push({ type:'frame', id:i, seq, tStart:t, tEnd:t+T_TX, tArrive:t+T_TX+T_PROP, label:'F'+i+'['+seq+']' });
+      log.push({ t, cls:'ok', msg:'A → F'+i+' [seq='+seq+'] in transito' });
+      evs.push({ type:'timer', id:i, tStart:t+T_TX, tEnd:t+T_TX+T_TOUT });
+      const tAS = t + T_TX + T_PROP + T_PROC;
+      evs.push({ type:'ack', id:i, seq, tStart:tAS, tEnd:tAS+T_PROP+T_TX, tArrive:tAS+T_PROP+T_TX });
+      log.push({ t:t+T_TX+T_PROP, cls:'ok', msg:'B → F'+i+' ricevuto OK → ACK '+seq+' inviato' });
+      t = tAS + T_PROP + T_TX + T_PROC;
+      log.push({ t, cls:'ok', msg:'A → ACK '+seq+' ricevuto → F'+i+' consegnato ✓' });
+    }
+    okCnt++;
+    seq = 1 - seq;
+    t += 1;
+  }
+
+  const tMax = Math.max(...evs.map(e => Math.max(e.tArrive||0, e.tEnd||0, e.t||0))) + 8;
+  return { evs, log, tMax, okCnt, retxCnt, toCnt, dupCnt,
+    consRatio: okCnt / (okCnt + retxCnt) };
+}
+
+// ════════════════════════════════════════════════════════════════
+// RENDER
+// ════════════════════════════════════════════════════════════════
+function lo() {
+  const W = cv.width, H = cv.height, PAD = 16;
+  return { W, H, yA: 52, yB: H - 32, xL: PAD + 36, xR: W - PAD };
+}
+function tToX(t, tCur, l) {
+  return l.xL + (t - Math.max(0, tCur - 6)) / WIN * (l.xR - l.xL);
+}
+
+function drawStatic() {
+  const l = lo();
+  ctx.clearRect(0,0,l.W,l.H);
+  ctx.fillStyle = C.bg; ctx.fillRect(0,0,l.W,l.H);
+  drawNodes(l);
+}
+
+function drawFrame() {
+  if (!sim) return;
+  const l = lo(), t = sim.tCur;
+  ctx.clearRect(0,0,l.W,l.H);
+  ctx.fillStyle = C.bg; ctx.fillRect(0,0,l.W,l.H);
+  drawIdleZones(l, t);
+  drawGrid(l, t);
+  drawNodes(l);
+  sim.evs.forEach(ev => drawEv(ev, l, t));
+  drawCursor(l, t);
+  drawAnnotations(l, t);
+}
+
+function drawIdleZones(l, t) {
+  sim.evs.forEach(ev => {
+    if (ev.type !== 'timer') return;
+    if (t < ev.tStart || t > ev.tEnd) return;
+    const x1 = tToX(ev.tStart, t, l);
+    const x2 = tToX(Math.min(t, ev.tEnd), t, l);
+    if (x2 <= x1) return;
+    ctx.fillStyle = 'rgba(180,83,9,0.04)';
+    ctx.fillRect(x1, l.yA + 4, x2 - x1, l.yB - l.yA - 8);
+  });
+}
+
+function drawGrid(l, t) {
+  const tLeft = Math.max(0, t - 6);
+  ctx.strokeStyle = C.border; ctx.lineWidth = 0.5; ctx.setLineDash([3,6]);
+  ctx.fillStyle = '#374151'; ctx.font = "11px Consolas,'Courier New',monospace"; ctx.textAlign = 'center';
+  for (let ti = Math.floor(tLeft); ti <= tLeft + WIN + 1; ti++) {
+    const x = tToX(ti, t, l);
+    if (x < l.xL - 4 || x > l.xR + 4) continue;
+    ctx.beginPath(); ctx.moveTo(x, l.yA - 12); ctx.lineTo(x, l.yB + 12); ctx.stroke();
+    if (ti % 4 === 0) ctx.fillText('t='+ti, x, l.yB + 24);
+  }
+  ctx.setLineDash([]);
+}
+
+function drawNodes(l) {
+  // Linea A
+  ctx.strokeStyle = C.nodeA; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(l.xL - 12, l.yA); ctx.lineTo(l.xR + 4, l.yA); ctx.stroke();
+  // Linea B
+  ctx.strokeStyle = C.nodeB; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(l.xL - 12, l.yB); ctx.lineTo(l.xR + 4, l.yB); ctx.stroke();
+  // Box A
+  ctx.fillStyle = C.nodeA;
+  ctx.fillRect(l.xL - 36, l.yA - 14, 28, 28);
+  ctx.fillStyle = '#fff'; ctx.font = "bold 15px system-ui,Arial,sans-serif"; ctx.textAlign = 'center';
+  ctx.fillText('A', l.xL - 22, l.yA + 5);
+  ctx.fillStyle = C.nodeA; ctx.font = "bold 11px Consolas,'Courier New',monospace";
+  ctx.fillText('mitt.', l.xL - 22, l.yA + 18);
+  // Box B
+  ctx.fillStyle = C.nodeB;
+  ctx.fillRect(l.xL - 36, l.yB - 14, 28, 28);
+  ctx.fillStyle = '#fff'; ctx.font = "bold 15px system-ui,Arial,sans-serif"; ctx.textAlign = 'center';
+  ctx.fillText('B', l.xL - 22, l.yB + 5);
+  ctx.fillStyle = C.nodeB; ctx.font = "bold 11px Consolas,'Courier New',monospace";
+  ctx.fillText('rice.', l.xL - 22, l.yB + 18);
+}
+
+function lnC(x1,y1,x2,y2,col,lw,dash,alpha) {
+  ctx.save(); ctx.strokeStyle=col; ctx.lineWidth=lw; ctx.globalAlpha=alpha||1;
+  if (dash) ctx.setLineDash([6,4]); else ctx.setLineDash([]);
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  ctx.setLineDash([]); ctx.restore();
+}
+function dotC(x,y,r,col,a) {
+  ctx.save(); ctx.globalAlpha=a||1; ctx.fillStyle=col;
+  ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill(); ctx.restore();
+}
+function lblC(txt,x,y,col,a,sz) {
+  ctx.save(); ctx.globalAlpha=a||1; ctx.fillStyle=col;
+  ctx.font=(sz||12)+"px Consolas,'Courier New',monospace"; ctx.textAlign='center';
+  ctx.fillText(txt,x,y); ctx.restore();
+}
+function crossC(x,y,col,fade,s) {
+  const ss = s||8;
+  ctx.save(); ctx.strokeStyle=col; ctx.lineWidth=2.5; ctx.globalAlpha=fade;
+  ctx.beginPath(); ctx.moveTo(x-ss,y-ss); ctx.lineTo(x+ss,y+ss);
+  ctx.moveTo(x+ss,y-ss); ctx.lineTo(x-ss,y+ss); ctx.stroke(); ctx.restore();
+}
+function arrowC(x,y,dx,dy,col,a) {
+  ctx.save(); ctx.globalAlpha=a||1; ctx.fillStyle=col;
+  const angle = Math.atan2(dy,dx), s = 8;
+  ctx.beginPath();
+  ctx.moveTo(x,y);
+  ctx.lineTo(x - s*Math.cos(angle-0.38), y - s*Math.sin(angle-0.38));
+  ctx.lineTo(x - s*Math.cos(angle+0.38), y - s*Math.sin(angle+0.38));
+  ctx.closePath(); ctx.fill(); ctx.restore();
+}
+function bgLbl(txt, x, y, col, a, sz) {
+  sz = sz || 12;
+  ctx.save();
+  ctx.font = 'bold ' + sz + "px Consolas,'Courier New',monospace";
+  const tw = ctx.measureText(txt).width;
+  const padX = 6, padY = 4;
+  ctx.globalAlpha = (a||1) * 0.96;
+  ctx.fillStyle = 'rgba(255,255,255,0.96)';
+  ctx.fillRect(x - tw/2 - padX, y - sz - padY, tw + 2*padX, sz + 2*padY);
+  ctx.strokeStyle = 'rgba(17,24,39,0.18)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x - tw/2 - padX, y - sz - padY, tw + 2*padX, sz + 2*padY);
+  ctx.restore();
+  ctx.save();
+  ctx.font = 'bold ' + sz + "px Consolas,'Courier New',monospace";
+  ctx.fillStyle = col; ctx.globalAlpha = a || 1; ctx.textAlign = 'center';
+  ctx.fillText(txt, x, y);
+  ctx.restore();
+}
+
+function drawEv(ev, l, t) {
+  const { yA, yB } = l;
+
+  if (ev.type === 'frame' || ev.type === 'frame-dropped') {
+    if (t < ev.tStart) return;
+    const isD  = ev.type === 'frame-dropped';
+    const col  = isD ? C.dropped : C.frameOK;
+    const prog = Math.max(0, Math.min(1, (t - ev.tStart) / (ev.tEnd - ev.tStart)));
+    const xF   = tToX(ev.tStart, t, l);
+    const xC   = tToX(Math.min(t, ev.tEnd), t, l);
+    const yC   = yA + prog * (yB - yA);
+    lnC(xF, yA, xC, yC, col, isD ? 2 : 2.5, isD || !!ev.retx, isD ? 0.62 : 0.92);
+    if (t <= ev.tEnd && xC > xF + 4) {
+      const dx = xC-xF, dy = yC-yA, len = Math.sqrt(dx*dx+dy*dy);
+      if (len > 8) arrowC(xC, yC, dx/len, dy/len, col, isD ? 0.62 : 0.92);
+      dotC(xC, yC, isD ? 4 : 5, col, isD ? 0.7 : 0.95);
+    }
+    if (t <= ev.tEnd && t >= ev.tStart + T_TX * 0.3) {
+      bgLbl(ev.label, xC + (yC > yA+20 ? 12 : -12), yC - 13, col, 0.98, 12);
+    }
+    if (isD && t >= ev.tArrive) {
+      const xA = tToX(ev.tArrive, t, l);
+      const fade = Math.max(0, 1 - (t - ev.tArrive) / 6);
+      crossC(xA, yB, C.dropped, fade, 8);
+      if (fade > 0.1) bgLbl('SCARTATO', xA, yB + 22, C.dropped, fade*0.95, 11);
+    }
+
+  } else if (ev.type === 'frame-late') {
+    if (t < ev.tStart) return;
+    const prog = Math.max(0, Math.min(1, (t - ev.tStart) / (ev.tArrive - ev.tStart)));
+    const xF   = tToX(ev.tStart, t, l);
+    const xC   = tToX(Math.min(t, ev.tArrive), t, l);
+    const yC   = yA + prog * (yB - yA);
+    lnC(xF, yA, xC, yC, C.late, 1.8, true, 0.5);
+    if (t < ev.tArrive) {
+      dotC(xC, yC, 4, C.late, 0.55);
+      if (t >= ev.tStart + T_TX * 0.3) bgLbl(ev.label+'(lento)', xC, yC - 11, C.late, 0.72, 11);
+    }
+    if (t >= ev.tArrive) {
+      const xA   = tToX(ev.tArrive, t, l);
+      const fade = Math.max(0, 1 - (t - ev.tArrive) / 6);
+      crossC(xA, yB, C.amber, fade, 8);
+      if (fade > 0.1) bgLbl('DUP TARDIVO', xA, yB + 22, C.amber, fade*0.95, 11);
+    }
+
+  } else if (ev.type === 'ack') {
+    if (t < ev.tStart) return;
+    const prog = Math.max(0, Math.min(1, (t - ev.tStart) / (ev.tEnd - ev.tStart)));
+    const xF   = tToX(ev.tStart, t, l);
+    const xC   = tToX(Math.min(t, ev.tEnd), t, l);
+    const yC   = yB + prog * (yA - yB);
+    lnC(xF, yB, xC, yC, C.ack, 2.5, false, 0.92);
+    if (t <= ev.tEnd && xC > xF + 4) {
+      const dx = xC-xF, dy = yC-yB, len = Math.sqrt(dx*dx+dy*dy);
+      if (len > 8) arrowC(xC, yC, dx/len, dy/len, C.ack, 0.92);
+      dotC(xC, yC, 5, C.ack, 0.95);
+    }
+    if (t <= ev.tEnd && t >= ev.tStart + T_TX * 0.3) {
+      bgLbl('ACK'+ev.seq, xC - 12, yC + 15, C.ack, 0.98, 12);
+    }
+
+  } else if (ev.type === 'ack-lost') {
+    if (t < ev.tStart) return;
+    const prog = Math.max(0, Math.min(1, (t - ev.tStart) / (ev.tEnd - ev.tStart)));
+    const xF   = tToX(ev.tStart, t, l);
+    const xC   = tToX(Math.min(t, ev.tEnd), t, l);
+    const yC   = yB + prog * (yA - yB);
+    lnC(xF, yB, xC, yC, C.ackLost, 2, false, 0.45);
+    if (t < ev.tDie) {
+      dotC(xC, yC, 4, C.ackLost, 0.5);
+      if (t >= ev.tStart + T_TX * 0.3) bgLbl('ACK'+ev.seq, xC - 10, yC + 15, C.ackLost, 0.7, 11);
+    }
+    if (t >= ev.tDie) {
+      const dp   = (ev.tDie - ev.tStart) / (ev.tEnd - ev.tStart);
+      const xD   = tToX(ev.tDie, t, l);
+      const yD   = yB + dp * (yA - yB);
+      const fade = Math.max(0.2, 1 - (t - ev.tDie) / 5);
+      crossC(xD, yD, C.dropped, fade, 7);
+      if (fade > 0.15) bgLbl('ACK perso', xD, yD + 18, C.dropped, fade*0.95, 11);
+    }
+
+  } else if (ev.type === 'timer') {
+    if (t < ev.tStart || t > ev.tEnd) return;
+    const x1 = tToX(ev.tStart, t, l);
+    const x2 = tToX(Math.min(t, ev.tEnd), t, l);
+    const y  = yA - 22;
+    ctx.save();
+    ctx.strokeStyle = C.timer; ctx.lineWidth = 3; ctx.globalAlpha = 0.7;
+    ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(x2, y); ctx.stroke();
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x1, y-4); ctx.lineTo(x1, y+4); ctx.stroke();
+    ctx.restore();
+    if (x2 - x1 > 26) bgLbl('TIMER', (x1+x2)/2, y - 4, C.timer, 0.9, 11);
+
+  } else if (ev.type === 'timeout') {
+    if (t < ev.t) return;
+    const x    = tToX(ev.t, t, l);
+    const fade = Math.max(0, 1 - (t - ev.t) / 6);
+    ctx.save();
+    ctx.strokeStyle = C.timeout; ctx.lineWidth = 3; ctx.globalAlpha = fade;
+    ctx.setLineDash([4,3]);
+    ctx.beginPath(); ctx.moveTo(x, yA - 32); ctx.lineTo(x, yA + 20); ctx.stroke();
+    ctx.setLineDash([]); ctx.restore();
+    if (fade > 0.05) bgLbl('TIMEOUT', x, yA - 36, C.timeout, fade * 0.98, 12);
+
+  } else if (ev.type === 'dup-discard') {
+    if (t < ev.t) return;
+    const x    = tToX(ev.t, t, l);
+    const fade = Math.max(0, 1 - (t - ev.t) / 6);
+    if (fade > 0.05) bgLbl('DUP scartato', x, yB + 22, C.amber, fade*0.95, 11);
+  }
+}
+
+function drawAnnotations(l, t) {
+  const { yA, yB } = l;
+  // Stato A
+  let stateA = 'in attesa ACK';
+  const txEv = sim.evs.find(e => (e.type==='frame'||e.type==='frame-dropped'||e.type==='frame-late') && t>=e.tStart && t<=e.tEnd);
+  if (txEv)  stateA = 'trasmissione frame';
+  const toEv = sim.evs.find(e => e.type==='timeout' && t>=e.t && t<=e.t+2);
+  if (toEv)  stateA = 'TIMEOUT — ritrasmette';
+  const ackRcv = sim.evs.find(e => e.type==='ack' && t>=e.tArrive-0.4 && t<=e.tArrive+1);
+  if (ackRcv) stateA = 'ACK ricevuto ✓';
+
+  // Stato B
+  let stateB = 'in attesa frame';
+  const rcvEv = sim.evs.find(e => (e.type==='frame'||e.type==='frame-late') && t>=e.tArrive-0.3 && t<=e.tArrive+1);
+  if (rcvEv)  stateB = 'frame ricevuto ✓';
+  const drpEv = sim.evs.find(e => e.type==='frame-dropped' && t>=e.tArrive && t<=e.tArrive+2);
+  if (drpEv)  stateB = 'frame scartato (silenzioso)';
+  const sndAck = sim.evs.find(e => e.type==='ack' && t>=e.tStart && t<=e.tEnd);
+  if (sndAck) stateB = 'invio ACK ' + sndAck.seq;
+  const dupEv = sim.evs.find(e => (e.type==='dup-discard'||e.type==='dup-late') && t>=e.t && t<=e.t+2);
+  if (dupEv)  stateB = 'duplicato scartato';
+
+  const colA = toEv ? C.timeout : (ackRcv ? C.nodeA : C.timer);
+  const colB = drpEv ? C.dropped : (dupEv ? C.amber : C.nodeB);
+
+  ctx.save();
+  ctx.font = "bold 13px Consolas,'Courier New',monospace"; ctx.textAlign = 'left';
+  const aText = 'A: ' + stateA;
+  const bText = 'B: ' + stateB;
+  const ax = l.xL + 4, ay = yA + 23;
+  const bx = l.xL + 4, by = yB - 8;
+  const aw = ctx.measureText(aText).width;
+  const bw = ctx.measureText(bText).width;
+  ctx.globalAlpha = 0.96;
+  ctx.fillStyle = 'rgba(255,255,255,0.96)';
+  ctx.fillRect(ax - 4, ay - 15, aw + 8, 20);
+  ctx.fillRect(bx - 4, by - 15, bw + 8, 20);
+  ctx.strokeStyle = 'rgba(17,24,39,0.18)';
+  ctx.strokeRect(ax - 4, ay - 15, aw + 8, 20);
+  ctx.strokeRect(bx - 4, by - 15, bw + 8, 20);
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = colA; ctx.fillText(aText, ax, ay);
+  ctx.fillStyle = colB; ctx.fillText(bText, bx, by);
+  ctx.restore();
+}
+
+function drawCursor(l, t) {
+  const x = tToX(t, t, l);
+  ctx.save(); ctx.strokeStyle = 'rgba(26,86,219,0.15)'; ctx.lineWidth = 1.5; ctx.setLineDash([2,5]);
+  ctx.beginPath(); ctx.moveTo(x, l.yA - 40); ctx.lineTo(x, l.yB + 20); ctx.stroke();
+  ctx.setLineDash([]); ctx.restore();
+}
+
+// ════════════════════════════════════════════════════════════════
+// LOOP
+// ════════════════════════════════════════════════════════════════
+const SPD_MAP = [0, 0.18, 0.38, 0.75, 1.35, 2.4];
+
+function startSim() {
+  if (animId) cancelAnimationFrame(animId);
+  lastTs = null; stepQueue = []; stepActive = false;
+  const params = gp();
+  sim = buildEvents(params);
+  sim.tCur = 0; sim.logIdx = 0; sim.running = true; sim.params = params;
+  sim.stepTriggered = {};
+  setUI(true); setStats('0','0','0','0','—');
+  clearLogs();
+  if (!isDesktop) document.querySelector('[data-tab="log"]').click();
+  animId = requestAnimationFrame(loop);
+}
+
+function resetSim() {
+  if (animId) cancelAnimationFrame(animId);
+  sim = null; lastTs = null; stepQueue = []; stepActive = false;
+  setUI(false); setStats('0','0','0','0','—');
+  clearLogs();
+  addLog('—', 'info', 'Reset. Configura i parametri e premi Avvia.');
+  drawStatic();
+}
+
+function loop(ts) {
+  if (!sim || !sim.running) return;
+  if (!lastTs) lastTs = ts;
+  const dt = (ts - lastTs) / 1000;
+  lastTs = ts;
+  sim.tCur += dt * SPD_MAP[sim.params.speed] * 6;
+
+  // Aggiorna log
+  while (sim.logIdx < sim.log.length && sim.log[sim.logIdx].t <= sim.tCur) {
+    const e = sim.log[sim.logIdx++];
+    addLog('t='+Math.round(e.t), e.cls, e.msg);
+  }
+
+  // Passo didattico
+  if (sim.params.stepMode) {
+    sim.evs.forEach(ev => {
+      if (!ev.stepTrig) return;
+      const key  = ev.type + '_' + ev.id;
+      if (sim.stepTriggered[key]) return;
+      const tTrig = ev.t !== undefined ? ev.t : ev.tArrive;
+      if (tTrig === undefined || sim.tCur < tTrig) return;
+      sim.stepTriggered[key] = true;
+      queueStep(ev.stepTrig);
+    });
+    if (stepQueue.length && !stepActive) {
+      sim.running = false;
+      showNextStep(); // riprende via showNextStep → handler stepOK
+      return;
+    }
+  }
+
+  // Statistiche simulazione (separate dalla formula teorica)
+  const framesOk = sim.log.filter(e => e.msg.includes('consegnato') && e.t <= sim.tCur).length;
+  const retx     = sim.log.filter(e => e.msg.includes('ritrasmette') && e.t <= sim.tCur).length;
+  const timeouts = sim.log.filter(e => e.msg.includes('TIMEOUT') && e.t <= sim.tCur).length;
+  const dups     = sim.log.filter(e => e.msg.includes('DUPLICATO') && e.t <= sim.tCur).length;
+  const totAtt   = framesOk + retx;
+  const effStr   = totAtt > 0 ? Math.round(framesOk / totAtt * 100) + '%' : '—';
+  setStats(framesOk, retx, timeouts, dups, effStr);
+
+  drawFrame();
+
+  if (sim.tCur >= sim.tMax) {
+    sim.running = false;
+    setUI(false);
+    setStats(sim.okCnt, sim.retxCnt, sim.toCnt, sim.dupCnt,
+      Math.round(sim.okCnt / (sim.okCnt + sim.retxCnt) * 100) + '%');
+    addLog('fine', 'ok', 'Simulazione completata. Frame consegnati: ' + sim.okCnt +
+      '/' + sim.nFrames + ' | Ritrasmissioni: ' + sim.retxCnt + ' | Timeout: ' + sim.toCnt);
+    return;
+  }
+  animId = requestAnimationFrame(loop);
+  lastTs = ts;
+}
+
+function clearLogs() {
+  ['dLog','mLog'].forEach(id => document.getElementById(id).innerHTML = '');
+}
+function addLog(t, cls, msg) {
+  ['dLog','mLog'].forEach(id => {
+    const d = document.createElement('div');
+    d.className = 'log-entry ' + cls;
+    d.innerHTML = '<span class="log-t">' + t + '</span><span class="log-m">' + msg + '</span>';
+    const p = document.getElementById(id);
+    p.appendChild(d);
+    p.scrollTop = p.scrollHeight;
+  });
+}
+
+applyLayout();
+resize();
+</script>
+</body>
+</html>
