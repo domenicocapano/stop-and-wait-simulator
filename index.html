@@ -6,7 +6,7 @@
   ║  Sito:        LearningObjects.org                                  ║
   ║  Anno:        2026                                                ║
   ║  Licenza:     PolyForm Noncommercial License 1.0.0                ║
-  ║  DOI:         10.5281/zenodo.XXXXXXX                              ║
+  ║  DOI:         10.5281/zenodo.20401650                              ║
   ╚═══════════════════════════════════════════════════════════════════╝
 -->
 <html lang="it">
@@ -236,8 +236,8 @@ input[type=range]{width:100%;accent-color:var(--accent);height:18px;}
     <div class="meta">Protocollo ARQ &mdash; D. Capano &mdash; LearningObjects.org &mdash; PolyForm NC 1.0</div>
   </div>
   <div class="hdr-btns">
-    <button class="btn-hdr" id="btnTheory" aria-label="Apri lavagna teorica">&#128218; Teoria</button>
-    <button class="btn-hdr ghost" id="btnLog" aria-label="Apri log simulazione">&#128196; Log</button>
+    <button type="button" class="btn-hdr" id="btnTheory" aria-label="Apri lavagna teorica">&#128218; Teoria</button>
+    <button type="button" class="btn-hdr ghost" id="btnLog" aria-label="Apri log simulazione">&#128196; Log</button>
   </div>
 </header>
 
@@ -460,39 +460,26 @@ input[type=range]{width:100%;accent-color:var(--accent);height:18px;}
     </div>
 
     <div class="theory-section">
-  <h3>&#9888; Nota su FCS/CRC, Ethernet e protocolli ARQ</h3>
-  <div class="warning-box">
-    <strong>FCS/CRC</strong> serve a rilevare se un frame &egrave; arrivato corrotto. 
-    Dopo la rilevazione dell&rsquo;errore, il comportamento dipende dal protocollo usato.<br><br>
-
-    <strong>Ethernet cablata classica</strong> usa FCS/CRC per rilevare gli errori e 
-    <em>scarta</em> i frame corrotti, senza effettuare automaticamente ritrasmissioni 
-    a livello Data Link.<br><br>
-
-    <strong>Altri protocolli o tecnologie di collegamento</strong>, invece, possono usare 
-    meccanismi ARQ con ACK, timeout e ritrasmissioni. 
-    <strong>Stop-and-Wait</strong> &egrave; il modello ARQ pi&ugrave; semplice: consente di comprendere 
-    il principio generale, poi esteso da protocolli pi&ugrave; efficienti come 
-    <strong>Sliding Window</strong>, <strong>Go-Back-N</strong> e 
-    <strong>Selective Repeat</strong>.<br><br>
-
-    Il simulatore presenta Stop-and-Wait come modello didattico fondamentale per 
-    comprendere conferme, timeout, ritrasmissioni e numeri di sequenza.
-   </div>
-   </div>
-
+      <h3>&#9888; Nota su Ethernet e Stop-and-Wait</h3>
+      <div class="warning-box">
+        <strong>Stop-and-Wait &egrave; un protocollo ARQ didattico</strong> per comprendere controllo di flusso, ACK, timeout e ritrasmissioni.<br><br>
+        <strong>Ethernet reale</strong>, invece, usa FCS/CRC per rilevare gli errori e <em>scarta</em> i frame corrotti senza effettuare automaticamente ritrasmissioni a livello Data Link. Le ritrasmissioni in Ethernet sono gestite da livelli superiori (es. TCP a livello di trasporto), non dal Data Link.
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- ══ MODALE LOG ══ -->
 <div class="modal-ov" id="logModal" role="dialog" aria-modal="true" aria-labelledby="logModalTitle">
   <div class="modal">
-    <button class="modal-close" id="closeLogModal" aria-label="Chiudi">&times;</button>
+    <button type="button" class="modal-close" id="closeLogModal" aria-label="Chiudi">&times;</button>
     <h2 id="logModalTitle">&#128196; Log della simulazione Stop-and-Wait</h2>
     <div class="log-modal-content" id="logModalContent">Nessun log disponibile. Avvia una simulazione.</div>
     <div class="log-modal-btns">
-      <button class="lm-btn primary" id="btnCopyLog">&#128203; Copia log</button>
-      <button class="lm-btn secondary" id="btnDownloadLog">&#8595; Scarica TXT</button>
-      <button class="lm-btn secondary" id="btnPrintLog">&#128438; Stampa / PDF</button>
-      <button class="lm-btn secondary" id="btnCloseLog2">Chiudi</button>
+      <button type="button" class="lm-btn primary" id="btnCopyLog">&#128203; Copia log</button>
+      <button type="button" class="lm-btn secondary" id="btnDownloadLog">&#8595; Scarica TXT</button>
+      <button type="button" class="lm-btn secondary" id="btnPrintLog">&#128438; Stampa / PDF</button>
+      <button type="button" class="lm-btn secondary" id="btnCloseLog2">Chiudi</button>
     </div>
   </div>
 </div>
@@ -647,28 +634,48 @@ document.getElementById('theoryModal').addEventListener('click',
   e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('open'); });
 
 // ── Modale log ────────────────────────────────────────────────
+// Sorgente unica del log: non leggiamo più il testo dal DOM, perché online
+// GitHub Pages/browser possono mostrare pannelli diversi (desktop/mobile) o
+// aggiornare la modale prima del repaint. Ogni voce viene salvata qui da addLog().
+let logHistory = [];
+
 function buildLogText() {
-  const entries = document.getElementById('dLog').querySelectorAll('.log-entry');
-  const header  = 'Stop-and-Wait Simulator v2.1 — Log simulazione\nAutore: Domenico Capano — LearningObjects.org\n' +
-                  new Date().toLocaleString('it-IT') + '\n' + '─'.repeat(60) + '\n\n';
-  const lines   = Array.from(entries).map(e => {
-    const t = e.querySelector('.log-t')?.textContent || '';
-    const m = e.querySelector('.log-m')?.textContent || '';
-    return t.padEnd(8) + m;
-  });
-  return header + lines.join('\n');
+  const header = 'Stop-and-Wait Simulator v2.1 — Log simulazione\n' +
+                 'Autore: Domenico Capano — LearningObjects.org\n' +
+                 new Date().toLocaleString('it-IT') + '\n' +
+                 '─'.repeat(60) + '\n\n';
+
+  if (!logHistory.length) {
+    return header + 'Nessun log disponibile. Avvia una simulazione.';
+  }
+
+  const lines = logHistory.map(e => {
+    const t = String(e.t || '').trim();
+    const m = String(e.msg || '').trim();
+    return (t ? t.padEnd(8) : ''.padEnd(8)) + m;
+  }).filter(line => line.trim().length > 0);
+
+  return header + (lines.length ? lines.join('\n') : 'Nessun log disponibile. Avvia una simulazione.');
 }
 
-document.getElementById('btnLog').addEventListener('click', () => {
-  document.getElementById('logModalContent').textContent = buildLogText();
-  document.getElementById('logModal').classList.add('open');
-});
-document.getElementById('closeLogModal').addEventListener('click',
-  () => document.getElementById('logModal').classList.remove('open'));
+function openLogModal() {
+  const content = document.getElementById('logModalContent');
+  const modal = document.getElementById('logModal');
+  if (!content || !modal) return;
+  content.textContent = buildLogText();
+  modal.classList.add('open');
+}
+
+function closeLogModal() {
+  const modal = document.getElementById('logModal');
+  if (modal) modal.classList.remove('open');
+}
+
+document.getElementById('btnLog').addEventListener('click', openLogModal);
+document.getElementById('closeLogModal').addEventListener('click', closeLogModal);
 document.getElementById('logModal').addEventListener('click',
-  e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('open'); });
-document.getElementById('btnCloseLog2').addEventListener('click',
-  () => document.getElementById('logModal').classList.remove('open'));
+  e => { if (e.target === e.currentTarget) closeLogModal(); });
+document.getElementById('btnCloseLog2').addEventListener('click', closeLogModal);
 
 document.getElementById('btnCopyLog').addEventListener('click', () => {
   const txt = buildLogText();
@@ -1296,14 +1303,21 @@ function loop(ts) {
 }
 
 function clearLogs() {
-  ['dLog','mLog'].forEach(id => document.getElementById(id).innerHTML = '');
+  logHistory = [];
+  ['dLog','mLog'].forEach(id => {
+    const panel = document.getElementById(id);
+    if (panel) panel.innerHTML = '';
+  });
 }
 function addLog(t, cls, msg) {
+  logHistory.push({ t, cls, msg });
+
   ['dLog','mLog'].forEach(id => {
+    const p = document.getElementById(id);
+    if (!p) return;
     const d = document.createElement('div');
     d.className = 'log-entry ' + cls;
     d.innerHTML = '<span class="log-t">' + t + '</span><span class="log-m">' + msg + '</span>';
-    const p = document.getElementById(id);
     p.appendChild(d);
     p.scrollTop = p.scrollHeight;
   });
