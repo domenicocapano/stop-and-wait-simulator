@@ -1,5 +1,4 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20401650.svg)](https://doi.org/10.5281/zenodo.20401650)
-
 # Stop-and-Wait Simulator
 
 **Version:** 2.1 — Zenodo Edition  
